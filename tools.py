@@ -1,15 +1,25 @@
 # tools.py
-from duckduckgo_search import DDGS
+# tools.py
+from ddgs import DDGS   # <-- FIXED import
+import uuid
 import requests
 
 def search_web(query, max_results=3):
-    """Fetches public market sentiment and business model info."""
     print(f"Searching web for: {query}...")
     results = DDGS().text(query, max_results=max_results)
-    context_text = ""
+
+    public_facts = []
     for r in results:
-        context_text += f"Source ({r['title']}): {r['body']}\n"
-    return context_text
+        fact_id = f"P{uuid.uuid4().hex[:6]}"
+        public_facts.append({
+            "fact_id": fact_id,
+            "category": "public_web",
+            "source": r.get("title", "Unknown Source"),
+            "text": r.get("body", "").strip()
+        })
+
+    return public_facts
+
 
 def get_generic_image_url(query):
     """

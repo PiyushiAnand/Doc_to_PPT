@@ -37,6 +37,16 @@ if __name__ == "__main__":
         exit()
     print(f"      Extracted {len(str(structured_output))} characters of data.")
 
+
+    #add publiclity availabile info 
+    public_info = tools.search_web(f"{company_name} business model and market sentiment", max_results=3)
+    structured_output.setdefault("facts", [])
+    structured_output["facts"].extend(public_info)
+
+    print("\n--- Publicly Available Information ---")
+    for info in public_info:
+        print(f" • {info['source']}: {info['text'][:75]}...")
+        
     # STEP 3: GENERATE CONTENT (Draft Slides)
     print("\n[2/4] Drafting Slides (LLM)...")
     # Pass the JSON string to the prompt
