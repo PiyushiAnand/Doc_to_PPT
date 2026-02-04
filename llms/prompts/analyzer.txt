@@ -19,7 +19,7 @@ ABSOLUTE EXTRACTION RULES (NO EXCEPTIONS)
    DO NOT extract the fact.
 5. Ignore opinions, forward-looking statements, marketing language,
    and qualitative claims unless purely factual.
-6. Ignore all Markdown formatting (headings, tables, bullets, emphasis).
+6. Parse data from Markdown TABLES and PIPE-SEPARATED LISTS (e.g., "Metric | Year: Value") carefully. Do not output the syntax, but YOU MUST EXTRACT the content (metrics, years, values) into the "metrics" array.
 7. If a value is missing or ambiguous, DO NOT guess — omit the fact.
 8. NEVER fabricate financial numbers, certifications, customers, or locations.
 9. Output MUST be valid JSON and NOTHING ELSE.

@@ -32,9 +32,10 @@ SLIDE 3: Investment Highlights
 - Management strengths.
 
 RULES:
-1. Use ONLY facts from <DATA>. Do NOT invent numbers.
-2. "image_query": Must be a SINGLE noun or 2-word phrase describing the industry (e.g., "automotive factory", "steel gears"). Do NOT use sentences.
-3. "chart_data": Use null unless you have clear year-on-year numbers.
+1. Use ONLY facts/metrics from <DATA>.
+2. Each bullet must reference the "fact_id" (e.g., "F001") or "metric_id" (e.g., "M001") from the input.
+3. "image_query": Must be a SINGLE noun or 2-word phrase (e.g., "steel gears"). Do NOT use sentences.
+4. "chart_data": Check the "metrics" array. If 3+ years of Revenue/EBITDA exist, map them here. Otherwise null.
 
 EXAMPLE OUTPUT (Structure Only - Do NOT Copy Content):
 {
