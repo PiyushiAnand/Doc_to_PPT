@@ -8,49 +8,77 @@ and EXTRACT ONLY objective, explicitly stated facts.
 You MUST preserve traceability.
 Every extracted fact MUST include a verbatim source excerpt.
 
-────────────────────────────────────────
+
 ABSOLUTE EXTRACTION RULES (NO EXCEPTIONS)
-────────────────────────────────────────
+
 
 1. Use ONLY information explicitly present inside <DATA>.
 2. DO NOT infer, estimate, assume, interpret, summarize, or generalize.
-3. DO NOT rephrase or paraphrase source text inside citations.
-4. If a fact cannot be supported by a verbatim excerpt (≤25 words),
-   DO NOT extract the fact.
-5. Ignore opinions, forward-looking statements, marketing language,
-   and qualitative claims unless purely factual.
-6. Parse data from Markdown TABLES and PIPE-SEPARATED LISTS (e.g., "Metric | Year: Value") carefully. Do not output the syntax, but YOU MUST EXTRACT the content (metrics, years, values) into the "metrics" array.
-7. If a value is missing or ambiguous, DO NOT guess — omit the fact.
-8. NEVER fabricate financial numbers, certifications, customers, or locations.
-9. Output MUST be valid JSON and NOTHING ELSE.
+3. If a fact cannot be supported by a verbatim excerpt (approx. ≤25 words),
+   truncate the excerpt using "..." to fit the limit.
+4. Ignore opinions, forward-looking statements (unless it is a specific target), 
+   and marketing fluff.
+5. **CRITICAL: FINANCIAL DATA EXTRACTION**
+   - The input data may contain lists of financials formatted as:
+     "Metric Name, 2021: Value, 2022: Value"
+   - You MUST extract EACH year/value pair as a separate item in the "metrics" array.
+   - Do not group them into one string.
+6. If a value is missing or ambiguous, DO NOT guess — omit the fact.
+7. NEVER fabricate financial numbers, certifications, customers, or locations.
+8. Output MUST be valid JSON and NOTHING ELSE.
 
-────────────────────────────────────────
-CITATION & TRACEABILITY RULES (CRITICAL)
-────────────────────────────────────────
+
+CITATION & TRACEABILITY RULES
+
 
 For EVERY extracted fact or metric:
+- Include the nearest section heading as `section`.
+- Include a verbatim `line_excerpt` copied EXACTLY from the text.
+- If the source line is too long, keep the relevant part and add "..." at the end.
 
-- Include the nearest section heading as `section`
-- Include a verbatim `line_excerpt` copied EXACTLY from the text
-- The excerpt must be ≤ 25 words
-- The excerpt must directly and explicitly support the fact
-- If no exact excerpt exists, the fact MUST NOT be extracted
 
-────────────────────────────────────────
-OUTPUT FORMAT RULES (STRICT)
-────────────────────────────────────────
+ONE-SHOT LEARNING (FOLLOW THIS PATTERN)
 
-- Return EXACTLY one JSON object
-- No markdown, no explanations, no prose
-- All strings must be properly quoted
-- Arrays and objects must be properly closed
-- Use empty arrays [] if no items exist
-- Do NOT include null placeholder facts
-- Omit fields entirely if no valid facts exist for them
 
-────────────────────────────────────────
-OUTPUT JSON SCHEMA (EXACT — DO NOT MODIFY)
-────────────────────────────────────────
+Input Text:
+"## Financials
+Revenue has grown steadily.
+Revenue, 2021: $100M, 2022: $120M.
+We adhere to ISO 9001 standards."
+
+Correct JSON Output:
+{
+  "facts": [
+    {
+      "fact_id": "F001",
+      "category": "certifications",
+      "text": "Company adheres to ISO 9001 standards.",
+      "source": { "section": "Financials", "line_excerpt": "We adhere to ISO 9001 standards." }
+    }
+  ],
+  "metrics": [
+    {
+      "metric_id": "M001",
+      "name": "Revenue",
+      "value": "100",
+      "unit": "$M",
+      "period": "2021",
+      "source": { "section": "Financials", "line_excerpt": "Revenue, 2021: $100M" }
+    },
+    {
+      "metric_id": "M002",
+      "name": "Revenue",
+      "value": "120",
+      "unit": "$M",
+      "period": "2022",
+      "source": { "section": "Financials", "line_excerpt": "2022: $120M" }
+    }
+  ]
+}
+
+
+OUTPUT JSON SCHEMA (EXACT)
+
 
 {
   "company_metadata": {
@@ -61,7 +89,7 @@ OUTPUT JSON SCHEMA (EXACT — DO NOT MODIFY)
   "facts": [
     {
       "fact_id": "F001",
-      "category": "",
+      "category": "business_description",
       "text": "",
       "source": {
         "document": "Company One-Pager",
@@ -100,59 +128,9 @@ OUTPUT JSON SCHEMA (EXACT — DO NOT MODIFY)
   }
 }
 
-────────────────────────────────────────
-CATEGORY GUIDELINES (NON-EXHAUSTIVE)
-────────────────────────────────────────
 
-Allowed values for `category` include:
-- business_description
-- products_and_services
-- industries_served
-- manufacturing_capabilities
-- manufacturing_footprint
-- geographic_presence
-- certifications
-- customers
-- operational_highlights
-
-Do NOT create new categories unless strictly necessary.
-
-────────────────────────────────────────
-METRIC RULES (STRICT)
-────────────────────────────────────────
-
-- Extract metrics ONLY if a numeric value is explicitly stated
-- Capture units and time periods exactly as written
-- DO NOT normalize or convert values
-- Examples of valid metrics:
-  - revenue
-  - growth
-  - order_book
-  - capex
-  - capacity
-  - number_of_plants
-
-────────────────────────────────────────
-IMAGE EXTRACTION RULES
-────────────────────────────────────────
-
-- Extract images ONLY if explicitly referenced (e.g., filenames, captions)
-- Do NOT infer images from descriptions
-- Capture the exact path or filename as written
-
-────────────────────────────────────────
-FINAL VERIFICATION CHECK (MANDATORY)
-────────────────────────────────────────
-
-Before responding, verify that:
-- Every fact and metric has a verbatim line_excerpt
-- No excerpt exceeds 25 words
-- No inferred or summarized information exists
-- The output is valid JSON and contains NOTHING else
-
-────────────────────────────────────────
 INPUT DATA
-────────────────────────────────────────
+
 <DATA>
 {{COMPANY_DATA}}
 </DATA>

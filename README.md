@@ -12,3 +12,7 @@
 #### Slide JSON
 #### ↓
 #### Python PPT Renderer
+
+
+OLLAMA_MODELS="/Volumes/Seag/ollama_models" ollama serve
+ python -m main --company "Gati" --file "/Volumes/Seag/AIML_GC/Company Data/logistics-gati/Gati-OnePager.md"

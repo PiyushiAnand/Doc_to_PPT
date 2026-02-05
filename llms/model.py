@@ -9,14 +9,18 @@ MODEL_NAME = "phi3.5"
 
 import json
 
-def load_prompt(prompt_path, company_data):
+def load_prompt(prompt_path, data):
     with open(prompt_path, "r", encoding="utf-8") as f:
         prompt = f.read()
 
-    if isinstance(company_data, dict):
-        company_data = json.dumps(company_data, indent=2)
+    if isinstance(data, dict):
+        data = json.dumps(data, indent=2)
 
-    return prompt.replace("{{COMPANY_DATA}}", company_data)
+    prompt = prompt.replace("{{COMPANY_DATA}}", data)
+    prompt = prompt.replace("{{STRUCTURED_JSON}}", data)
+
+    return prompt
+
 
 
 def extract_json(text):
@@ -56,7 +60,7 @@ def extract_json(text):
     raise ValueError("Unbalanced JSON brackets")
 
 
-def get_response_from_llm(prompt_path, data, retries=2):
+def get_response_from_llm(model,prompt_path, data,temp, retries=2):
     prompt = load_prompt(prompt_path, data)
 
     for attempt in range(retries + 1):
@@ -66,11 +70,11 @@ def get_response_from_llm(prompt_path, data, retries=2):
         #     stream=False
         # )["response"]
         response = ollama.generate(
-            model="qwen2.5:7b-instruct",
+            model,
             prompt=prompt,
             stream=False,
             options={
-                "temperature": 0.0,
+                "temperature": temp,
                 "top_p": 0.9,
                 "repeat_penalty": 1.1,
                 "num_ctx": 4096
