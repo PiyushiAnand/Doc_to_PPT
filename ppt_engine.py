@@ -236,7 +236,8 @@ def generate_styled_ppt(ppt_data, output_file):
             # Anonymity Filter
             raw_text = bullet.get("text") or bullet.get("textiname") or bullet.get("summary")
             
-            p.text = "■ " + raw_text 
+            if isinstance(raw_text, str):
+                p.text = "■ " + raw_text 
             
             p.font.name = FONT_BODY
             p.font.size = FONT_SIZE_BODY
