@@ -82,7 +82,7 @@ def get_response_from_llm(model,prompt_path, data,temp, retries=2):
         )["response"]
 
 
-        print(response)
+        # print(response)
         try:
             json_text = extract_json(response)
             return json.loads(json_text)

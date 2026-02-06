@@ -52,35 +52,51 @@ if __name__ == "__main__":
     input_file = args.file
 
     
-    print(f"--- STARTING PIPELINE FOR {company_name} ---")
-
     # STEP 1: LOAD DATA
     raw_text = ingest_data(input_file)
     if not raw_text:
         exit()
-    
-    # STEP 2: ANALYZE (Extract Facts)
-    print("\n[1/4] Analyzing Data (LLM)...")
-    structured_output = model.get_response_from_llm(model="qwen2.5:7b-instruct",
-        prompt_path="llms/prompts/analyzer.txt",
-        data=raw_text, temp=0.5
+
+    # STEP 1.1: LOAD PUBLICLY AVAILABLE INFO (RAW TEXT ONLY)
+    public_info = tools.search_web(
+        f"{company_name} business model manufacturing capacity financials",
+        max_results=3
     )
+
+    public_text_blocks = []
+    for item in public_info:
+        if isinstance(item, dict) and "text" in item:
+            public_text_blocks.append(
+                f"Source: {item.get('source', 'Public Source')}\n{item['text']}"
+            )
+
+    public_text = "\n\n".join(public_text_blocks)
+
+    # STEP 1.2: MERGE RAW + PUBLIC DATA
+    combined_text = raw_text
+
+    if public_text:
+        combined_text += "\n\n--- PUBLICLY AVAILABLE INFORMATION ---\n"
+        combined_text += public_text
+
+    # STEP 2: ANALYZE (STRICT FACT EXTRACTION)
+    print("\n[1/4] Analyzing Data (LLM)...")
+
+    structured_output = model.get_response_from_llm(
+        model="mistral:7b",
+        prompt_path="llms/prompts/analyzer.txt",
+        data=combined_text,
+        temp=0.0
+    )
+
     # DEBUG: Check if analyzer worked
     if not structured_output:
         print("ERROR: Analyzer returned empty data.")
         exit()
+
     print(f"      Extracted {len(str(structured_output))} characters of data.")
+    print(structured_output)  # Print the structured output for debugging
 
-
-    #add publiclity availabile info 
-    public_info = tools.search_web(f"{company_name} business model and market sentiment", max_results=3)
-    structured_output.setdefault("facts", [])
-    structured_output["facts"].extend(public_info)
-
-    print("\n--- Publicly Available Information ---")
-    for info in public_info:
-        print(f" • {info['source']}: {info['text'][:75]}...")
-        
     # STEP 3: GENERATE CONTENT (Draft Slides)
     print("\n[2/4] Drafting Slides (LLM)...")
     # Pass the JSON string to the prompt
@@ -89,6 +105,7 @@ if __name__ == "__main__":
         json.dumps(structured_output) , temp=0.0 
     )
 
+    print(ppt_points)  # Print the raw output for debugging
 
     # DEBUG: Print the first slide to verify it's not a placeholder
     try:
@@ -107,20 +124,34 @@ if __name__ == "__main__":
 
     # STEP 5: GENERATE CITATIONS
     print("\n[4/4] Creating Citation Doc...")
-    # doc_engine.generate_citation_doc(structured_output["facts"], f"Blind_Teaser_{company_name}_Citations.docx")
-    # Build registry once
-    fact_registry = {
-        f["fact_id"]: {
-            "text": f.get("text", ""),
-            "source": f.get("source", "Unknown")
-        }
-        for f in structured_output["facts"]
-    }
 
+    # ---- SAFE FACT NORMALIZATION ----
+    facts = structured_output.get("facts")
+
+    if not isinstance(facts, list):
+        facts = []
+
+    fact_registry = {}
+
+    for f in facts:
+        if not isinstance(f, dict):
+            continue
+
+        fact_id = f.get("fact_id")
+        if not fact_id:
+            continue
+
+        fact_registry[fact_id] = {
+            "text": f.get("text", ""),
+            "source": f.get("source", {})
+        }
+
+    # ---- GENERATE CITATION DOC ----
     doc_engine.generate_citation_doc(
         ppt_data=ppt_points,
         fact_registry=fact_registry,
         filename=f"{company_name}_Citations.docx"
     )
+
 
     print("\n--- SUCCESS: Files Generated ---")
