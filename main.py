@@ -5,6 +5,23 @@ import tools
 import ppt_engine
 import doc_engine
 import argparse
+import re
+def scrub_company_names(ppt_json, company_name):
+    ppt_str = json.dumps(ppt_json)
+
+    patterns = [
+        re.escape(company_name),
+        re.escape(company_name + " Ltd"),
+        re.escape(company_name + " Limited"),
+        re.escape(company_name + " Pvt Ltd"),
+        re.escape(company_name + " Private Limited"),
+    ]
+
+    for pat in patterns:
+        ppt_str = re.sub(pat, "the company", ppt_str, flags=re.IGNORECASE)
+
+    return json.loads(ppt_str)
+
 
 # 1. READ DATA
 def ingest_data(file_path):
@@ -67,10 +84,11 @@ if __name__ == "__main__":
     # STEP 3: GENERATE CONTENT (Draft Slides)
     print("\n[2/4] Drafting Slides (LLM)...")
     # Pass the JSON string to the prompt
-    ppt_points = model.get_response_from_llm("llama3.1:8b",
+    ppt_points = model.get_response_from_llm("phi3:mini",
         "llms/prompts/slide_gen.txt",
         json.dumps(structured_output) , temp=0.0 
     )
+
 
     # DEBUG: Print the first slide to verify it's not a placeholder
     try:
@@ -83,8 +101,10 @@ if __name__ == "__main__":
 
     # STEP 4: GENERATE PPT
     print("\n[3/4] Creating PowerPoint...")
+    ppt_points = scrub_company_names(ppt_points,company_name)
     ppt_engine.generate_styled_ppt(ppt_points, f"Blind_Teaser_{company_name}_Final.pptx")
-    
+   
+
     # STEP 5: GENERATE CITATIONS
     print("\n[4/4] Creating Citation Doc...")
     # doc_engine.generate_citation_doc(structured_output["facts"], f"Blind_Teaser_{company_name}_Citations.docx")

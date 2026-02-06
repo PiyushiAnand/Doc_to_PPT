@@ -234,7 +234,7 @@ def generate_styled_ppt(ppt_data, output_file):
         for index, bullet in enumerate(bullets):
             p = tf.add_paragraph()
             # Anonymity Filter
-            raw_text = bullet["text"] if isinstance(bullet, dict) else str(bullet)
+            raw_text = bullet.get("text") or bullet.get("textiname") or bullet.get("summary")
             
             p.text = "■ " + raw_text 
             

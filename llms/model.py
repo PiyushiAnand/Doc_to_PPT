@@ -4,7 +4,7 @@ import json
 import ollama
 import re
 
-MODEL_NAME = "phi3.5"
+# MODEL_NAME = "phi3.5"
 
 
 import json
